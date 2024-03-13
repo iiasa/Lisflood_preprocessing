@@ -172,7 +172,7 @@ for stationNo in range(len(makeshp)):
 
 
     efas_no =(f"{int(station[1]):04d}")
-    stname = station[7] + "_"+ station[3]
+    stname = station[7] + "_"+ station[8] + "_"+ station[3]
     stname = stname.replace("ö", "oe")
     stname = stname.replace("ü", "ue")
     stname = stname.replace("ä", "ae")
@@ -364,7 +364,7 @@ for stationNo in range(len(makeshp)):
 
 
             s =  makeshp[stationNo][:-1]
-            s = s + "\t" + f"{locy:8.4f}" + "\t" + f"{locx:6.4f}" + "\t" + f"{upsvalue:9.0f}"
+            s = s + "\t" + f"{locy:8.5f}" + "\t" + f"{locx:6.5f}" + "\t" + f"{upsvalue:9.0f}"
 
 
             # add if Glofas is different

@@ -82,7 +82,7 @@ print ("done read ups")
 
 # -----------------------------------
 
-for stationNo in range(len(glofas)):
+for stationNo in range(0,len(glofas)):
 
     station = glofas[stationNo].split("\t")
     upsreal = float(station[6])
@@ -102,6 +102,10 @@ for stationNo in range(len(glofas)):
     col1 = int((coord[1] - left) * invcell)
     row1 = int((top -coord[0]) * invcell)
     ups1 = ups[row1,col1]
+
+    # middle of the 3 sec cell
+    xcentre = col1 / 1200 + left + 1 / 2400
+    ycentre = top - row1 / 1200 - 1 / 2400
 
     rangexy = 55
     upsups = np.zeros((rangexy*2+1,rangexy*2+1))
@@ -133,11 +137,6 @@ for stationNo in range(len(glofas)):
     x=minxy[1][0]
     j = rowrow[y]
     i = colcol[x]
-
-    yy=coord[0]+(rangexy-y)*cell
-    xx=coord[1]-(rangexy-x)*cell
-    ups2 = ups[j,i]
-
 
     #------------------------------------------------------
     # if still big error increase range
@@ -174,9 +173,6 @@ for stationNo in range(len(glofas)):
         j = rowrow[y]
         i = colcol[x]
 
-        yy=coord[0]+(rangexy-y)*cell
-        xx=coord[1]-(rangexy-x)*cell
-        ups2 = ups[j,i]
     #-------------------------------------------------
 
     # ------------------------------------------------------
@@ -214,21 +210,19 @@ for stationNo in range(len(glofas)):
             j = rowrow[y]
             i = colcol[x]
 
-            yy = coord[0] + (rangexy - y) * cell
-            xx = coord[1] - (rangexy - x) * cell
-            ups2 = ups[j, i]
-            ii =1
     # -------------------------------------------------
 
-    #-------------------------------------------------
+    yy = ycentre + (rangexy - y) * cell
+    xx = xcentre - (rangexy - x) * cell
+    ups2 = ups[j, i]    #-------------------------------------------------
     s = str(stationNo)  + "\t"+ str(glofas_no) + "\t" + station[7] + "\t" + station[8] + "\t"
-    s = s + f"{yy:.4f}" + "\t" + f"{xx:.4f}" + "\t" + f"{ups2:.0f}"+ "\t"
-    s = s + f"{coord[0]:.4f}"+ "\t" +f"{coord[1]:.4f}" + "\t"+f"{upsreal:.0f}"
+    s = s + f"{yy:.5f}" + "\t" + f"{xx:.5f}" + "\t" + f"{ups2:.0f}"+ "\t"
+    s = s + f"{coord[0]:.5f}"+ "\t" +f"{coord[1]:.5f}" + "\t"+f"{upsreal:.0f}"
     print (s)
 
     #header += "\tnewlat\tnewlon\tnewarea"
     s = glofas[stationNo].rstrip()
-    s = s + "\t" + f"{yy:.4f}" + "\t" + f"{xx:.4f}" + "\t" + f"{ups2:.0f}"+ "\n"
+    s = s + "\t" + f"{yy:.6f}" + "\t" + f"{xx:.6f}" + "\t" + f"{ups2:.0f}"+ "\n"
     #s = s + "\t" + str(upsind[y,x]) +"\t"+str(diffind[y,x])+"\t"+str(ind[y,x]) + "\n"
     f = open(glofas_Merit, "a")
     f.write(s)

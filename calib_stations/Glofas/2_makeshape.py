@@ -108,10 +108,9 @@ f = open(glofas_Merit, "w")
 f.write(header)
 f.close()
 
-lddfile = "P:/watmodel/CWATM/cwatm_input_danube_1min/processing/routing/ldd/danube_fd.tif"
-print ("load ldd")
 
-src = rasterio.open(lddfile, "r")
+print ("load ldd")
+src = rasterio.open(lddname, "r")
 flwdir = src.read(1)
 transform = src.transform
 latlon = src.crs.to_epsg()
