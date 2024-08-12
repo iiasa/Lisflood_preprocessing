@@ -1,11 +1,9 @@
-#!/usr/bin/env python
-# coding: utf-8
-
 # ***
 # Name:        Find MERIT coordinates
 # Purpose:     uses upstream area of MERIT (UPA) and GRDC station data
 #              to check and correct station location
 # 
+"""
 # Author:      Peter Burek, Jesús Casado Rodríguez
 # 
 # Created:     15/05/2022
@@ -29,7 +27,7 @@
 # Indicator:  ranking criteria: UPS_Indicator + 2 x dist_indicator
 # 
 # ***
-
+"""
 
 import numpy as np
 import pandas as pd
@@ -46,91 +44,17 @@ import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s | %(levelname)s | %(message)s')
 logger = logging.getLogger(__name__)
 
-
-def find_pixel(
-    upstream: xr.DataArray,
-    lat: int,
-    lon: int,
-    area: float,
-    rangexy: int = 55,
-    penalty: int = 500,
-    factor: int = 2,
-    distance_scaler: float = .92,
-    error_threshold: int = 50
-) -> Tuple:
-    """
-    Find the coordinates of the pixel in the upstream map with a smaller error compared with a reference area.
-    
-    Parameters:
-    -----------
-    upstream: xr.DataArray
-        The upstream data containing latitude and longitude coordinates.
-    lat: float
-        The original latitude value.
-    lon: float
-        The original longitude value.
-    area: float
-        The reference area to calculate percent error.
-    rangexy: int, optional
-        The range in both x and y directions to search for the new location.
-    penalty: int, optional
-        The penalty value to add to the distance when the percent error is too high.
-    error_threshold: float, optional
-        The threshold for the percent error to apply the penalty.
-    factor: int, optional
-        The factor to multiply with the distance for the error calculation.
-    distance_scaler: float, optional
-        The scaling factor for the distance calculation in pixels.
-    
-    Returns:
-    --------
-    lat_new : float
-        The latitude of the new location.
-    lon_new : float
-        The longitude of the new location.
-    min_error : float
-        The minimum error value at the new location.
-    """
-
-    # find coordinates of the nearest pixel in the map
-    nearest_pixel = upstream.sel(lat=lat, lon=lon, method='nearest')
-    lat_orig, lon_orig = [nearest_pixel[coord].item() for coord in ['lat', 'lon']]
-
-    # extract subset of the upstream map
-    cellsize = np.mean(np.diff(upstream.lon.data))
-    delta = rangexy * cellsize + 1e-6
-    upstream_sel = upstream.sel(lat=slice(lat_orig + delta, lat_orig - delta),
-                                lon=slice(lon_orig - delta, lon_orig + delta))
-
-    # percent error in catchment area
-    error = 100 * (1 - upstream_sel / area)
-
-    # distance from the original pixel (in pixels)
-    i = np.arange(-rangexy, rangexy + 1)
-    ii, jj = np.meshgrid(i, i)
-    distance = xr.DataArray(data=np.sqrt(ii**2 + jj**2) * distance_scaler, coords=upstream_sel.coords, dims=upstream_sel.dims)
-    # penalise if error is too big
-    distance = distance.where(error <= error_threshold, distance + penalty)
-
-    # update error based on distance
-    error += factor * distance
-
-    # coordinates of the new location
-    min_error = error.where(error == error.min(), drop=True)
-    lat_new, lon_new = [min_error[coord].item() for coord in ['lat', 'lon']]
-    
-    return lat_new, lon_new, min_error.item()
+from utils import find_pixel
 
 
-# CONFIGURACIÓN
+# CONFIGURATION
 
 # input
-
 STATION_FILE = 'stations.csv' # table of original coordinates (lat and lon) and catchment area in km2
-MAP = "../data/ups_danube_3sec.tif" # MERIT Yamazaki et al 2019 - upstream area in km2
+UPSTREAM_FILE = "../data/ups_danube_3sec.tif" # MERIT Yamazaki et al 2019 - upstream area in km2
 
 # output
-OUTPUT_FILE = 'stations_Merit_xarray.csv'
+OUTPUT_FILE = 'stations_MERIT_xarray.csv'
 
 
 # READ INPUT DATA
@@ -142,9 +66,9 @@ stations[new_cols] = np.nan
 logger.info(f'Table of stations correctly read: {STATION_FILE}')
 
 # read upstream map
-upstream = rioxarray.open_rasterio(MAP).squeeze(dim='band')
+upstream = rioxarray.open_rasterio(UPSTREAM_FILE).squeeze(dim='band')
 upstream = upstream.rename({'x': 'lon', 'y': 'lat'})
-logger.info(f'Map or upstream area corretly read: {STATION_FILE}')
+logger.info(f'Map of upstream area corretly read: {UPSTREAM_FILE}')
 
 
 # PROCESSING
