@@ -30,10 +30,10 @@ Indicator: indicator of similarity calculated by intersection / union of newshae
 
 """
 
-
+import os
+os.environ['USE_PYGEOS'] = '0'
 import numpy as np
 import pandas as pd
-import geopandas as gpd
 import rioxarray
 import pyflwdir
 from pathlib import Path
@@ -52,32 +52,39 @@ from utils import catchment_polygon
 # CONFIGURATION
 
 # input
-STATION_FILE = 'stations_MERIT_xarray.csv' # output of step 1
-LDD_FILE = '../data/danube_fd.tif'
+STATION_FILE = Path('stations.csv')
+LDD_FINE_FILE = Path('../data/danube_fd.tif')
 
-# output
-SHAPE_FOLDER = Path('../shape_glofas_3sec/')
+# output folder
+SHAPE_FOLDER = Path('./shapefiles/')
 
 
 # READ INPUT DATA
 
+# read local drainage direction map
+ldd_fine = rioxarray.open_rasterio(LDD_FINE_FILE).squeeze(dim='band')
+logger.info(f'Map of local drainage directions corretly read: {LDD_FINE_FILE}')
+
+# create river network
+fdir_fine = pyflwdir.from_array(ldd_fine.data,
+                                ftype='d8', 
+                                transform=ldd_fine.rio.transform(),
+                                check_ftype=False,
+                                latlon=True)
+
+# resolution of the input map
+cellsize = np.mean(np.diff(ldd_fine.x)) # degrees
+cellsize_arcsec = int(np.round(cellsize * 3600, 0)) # arcsec
+suffix_fine = f'{cellsize_arcsec}sec'
+logger.info(f'Fine resolution is {cellsize_arcsec} arcseconds')
+
 # read stations text file
-stations = pd.read_csv(STATION_FILE, index_col='ID')
+stations = pd.read_csv(f'{STATION_FILE.stem}_{suffix_fine}.csv', index_col='ID')
 logger.info(f'Table of stations correctly read: {STATION_FILE}')
 
-# read local drainage direction map
-ldd = rioxarray.open_rasterio(LDD_FILE).squeeze(dim='band')
-ldd = ldd.rename({'x': 'lon', 'y': 'lat'})
-logger.info(f'Map of local drainage directions corretly read: {LDD_FILE}')
-
-# parse the LDD map to be usable later on
-logger.debug("make ldd")
-flw = pyflwdir.from_array(ldd.data, #flwdir, 
-                          ftype='d8', 
-                          transform=ldd.rio.transform(),
-                          check_ftype=False,
-                          latlon=True)
-logger.debug("done ldd")
+# output path
+SHAPE_FOLDER_FINE = SHAPE_FOLDER / suffix_fine
+SHAPE_FOLDER_FINE.mkdir(parents=True, exist_ok=True)
 
 
 # PROCESSING
@@ -85,12 +92,12 @@ logger.debug("done ldd")
 for ID, attrs in tqdm(stations.iterrows(), total=stations.shape[0], desc='stations'):
        
     # corrected coordinates
-    lat, lon = attrs[['lat_new', 'lon_new']]
+    lat, lon = attrs[[f'lat_{suffix_fine}', f'lon_{suffix_fine}']]
     
     # boolean map of the catchment associated to the corrected coordinates
     logger.debug("basin")
     try:
-        basin_arr = flw.basins(xy=(lon, lat)).astype(np.int32)
+        basin_arr = fdir_fine.basins(xy=(lon, lat)).astype(np.int32)
     except Exception as e:
         logger.error(f'Conversion to basin not working in catchment {ID}: {e}')
         continue
@@ -98,14 +105,15 @@ for ID, attrs in tqdm(stations.iterrows(), total=stations.shape[0], desc='statio
     # vectorize the boolean map into geopandas
     logger.debug("vectorize")
     basin_gdf = catchment_polygon(basin_arr.astype(np.int32),
-                                  transform=ldd.rio.transform(),
-                                  crs=ldd.rio.crs,
+                                  transform=ldd_fine.rio.transform(),
+                                  crs=ldd_fine.rio.crs,
                                   name='ID')
     basin_gdf['ID'] = ID
     basin_gdf.set_index('ID', inplace=True)
     basin_gdf[attrs.index] = attrs.values
 
     # export shape file
-    output_file = SHAPE_FOLDER / f'{ID}.shp'
+    output_file = SHAPE_FOLDER_FINE / f'{ID}.shp'
     basin_gdf.to_file(output_file)
     logger.info(f'Catchment {ID} exported as shapefile: {output_file}')
+

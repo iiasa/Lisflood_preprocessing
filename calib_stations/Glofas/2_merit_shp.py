@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[1]:
-
-
 """
 # -------------------------------------------------------------------------
 # Name:        Use MERIT coordinates of upstream area to create shapefiles
