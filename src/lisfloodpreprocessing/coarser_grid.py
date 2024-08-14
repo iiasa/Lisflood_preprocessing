@@ -184,12 +184,12 @@ def coordinates_coarse(
         logger.info(f'Catchment {ID} exported as shapefile: {output_shp}')
 
         # update new columns in 'stations'
-        stations.loc[ID, cols_coarse] = lat_coarse, lon_coarse, area_coarse
+        stations.loc[ID, cols_coarse] = [round(lat_coarse, 6), round(lon_coarse, 6), int(area_coarse)]
     
     # return/save
     stations.sort_index(axis=1, inplace=True)
     if save:
-        output_csv = f'{Path(STATION_FILE).stem}_{suffix_coarse}.csv'
+        output_csv = f'{Path(cfg.STATIONS).stem}_{suffix_coarse}.csv'
         stations.to_csv(output_csv)
         logger.info(f'The updated stations table in the coarser grid has been exported to: {output_csv}')
     else:
