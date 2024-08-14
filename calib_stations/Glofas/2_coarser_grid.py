@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[1]:
-
-
 """
 # -------------------------------------------------------------------------
 # Name:        Shapefile in low-res
@@ -76,33 +70,26 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s | %(levelname)s | %(
 logger = logging.getLogger(__name__)
 
 from utils import catchment_polygon
+from __init__ import Config
 
 
 ### CONFIGURATION
 
+cfg = Config('config.yml')
+
 # input data
 STATION_FILE = 'stations_MERIT.csv' # output of step 1
-LDD_COARSE_FILE = "ldd_3min.tif"
-UPSTREAM_COARSE_FILE = "upArea_repaired.nc"
-
-# output folder
-SHAPE_FOLDER = Path('./shapefiles/')
-
-# conditions
-MIN_AREA = 100 # km2
-ABS_ERROR = 50 # km2
-PCT_ERROR = 1 # %
 
 
 ### READ INPUT DATA
 
 # read upstream area map of coarse grid
-upstream_coarse = rioxarray.open_rasterio(UPSTREAM_COARSE_FILE).squeeze(dim='band')
-logger.info(f'Map of upstream area corretly read: {UPSTREAM_COARSE_FILE}')
+upstream_coarse = rioxarray.open_rasterio(cfg.UPSTREAM_COARSE).squeeze(dim='band')
+logger.info(f'Map of upstream area corretly read: {cfg.UPSTREAM_COARSE}')
 
 # read local drainage direction map
-ldd_coarse = rioxarray.open_rasterio(LDD_COARSE_FILE).squeeze(dim='band')
-logger.info(f'Map of local drainage directions correctly read: {LDD_COARSE_FILE}')
+ldd_coarse = rioxarray.open_rasterio(cfg.LDD_COARSE).squeeze(dim='band')
+logger.info(f'Map of local drainage directions correctly read: {cfg.LDD_COARSE}')
 
 # create river network
 fdir_coarse = pyflwdir.from_array(ldd_coarse.data,
@@ -134,8 +121,8 @@ cols_coarse = [f'{col}_{suffix_coarse}' for col in ['lat', 'lon', 'area']]
 stations[cols_coarse] = np.nan
 
 # output folders
-SHAPE_FOLDER_FINE = SHAPE_FOLDER / suffix_fine
-SHAPE_FOLDER_COARSE = SHAPE_FOLDER / suffix_coarse
+SHAPE_FOLDER_FINE = cfg.SHAPE_FOLDER / suffix_fine
+SHAPE_FOLDER_COARSE = cfg.SHAPE_FOLDER / suffix_coarse
 for folder in [SHAPE_FOLDER_FINE, SHAPE_FOLDER_COARSE]:
     folder.mkdir(parents=True, exist_ok=True)
 
@@ -153,8 +140,8 @@ for ID, attrs in tqdm(stations.iterrows(), total=stations.shape[0], desc='statio
     # coordinates and upstream area in the fine grid
     lat_fine, lon_fine, area_fine = attrs[[f'{col}_{suffix_fine}' for col in ['lat', 'lon', 'area']]]
        
-    if (area_ref < MIN_AREA) or (area_fine < MIN_AREA):
-        logger.info(f'The catchment area of station {ID} is smaller than the minimum of {MIN_AREA} km2')
+    if (area_ref < cfg.MIN_AREA) or (area_fine < cfg.MIN_AREA):
+        logger.info(f'The catchment area of station {ID} is smaller than the minimum of {cfg.MIN_AREA} km2')
         continue
                         
     # import shapefile of catchment polygon
@@ -205,7 +192,7 @@ for ID, attrs in tqdm(stations.iterrows(), total=stations.shape[0], desc='statio
     # use middle point if errors are small
     abs_error = abs(area_shape - area_centre)
     pct_error = 100 * abs(1 - area_centre / area_shape)
-    if (abs_error <= ABS_ERROR) and (pct_error <= PCT_ERROR):
+    if (abs_error <= cfg.ABS_ERROR) and (pct_error <= cfg.PCT_ERROR):
         i_shape = i_centre
         area_shape = area_centre
 
