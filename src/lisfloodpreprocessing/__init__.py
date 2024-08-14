@@ -26,7 +26,7 @@ class Config:
         self.UPSTREAM_COARSE = Path(config['input']['upstream_coarse'])
         
         # output
-        self.SHAPE_FOLDER = Path(config.get('output_folder'), './shapefiles')
+        self.SHAPE_FOLDER = Path(config.get('output_folder', './shapefiles'))
         self.SHAPE_FOLDER.mkdir(parents=True, exist_ok=True)
         
         # conditions
