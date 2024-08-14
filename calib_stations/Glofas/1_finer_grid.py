@@ -13,28 +13,23 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s | %(levelname)s | %(
 logger = logging.getLogger(__name__)
 
 from utils import find_pixel, catchment_polygon 
+from __init__ import Config
 
 
 # CONFIGURATION
 
-# input
-STATION_FILE = Path('stations.csv')
-UPSTREAM_FINE_FILE = Path('../data/ups_danube_3sec.tif') # MERIT Yamazaki et al 2019 
-LDD_FINE_FILE = Path('../data/danube_fd.tif')
-
-# output
-SHAPE_FOLDER = Path('./shapefiles/')
+cfg = Config('config.yml')
 
 
 # READ INPUT DATA
 
 # read upstream map with fine resolution
-upstream_fine = rioxarray.open_rasterio(UPSTREAM_FINE_FILE).squeeze(dim='band')
-logger.info(f'Map of upstream area corretly read: {UPSTREAM_FINE_FILE}')
+upstream_fine = rioxarray.open_rasterio(cfg.UPSTREAM_FINE).squeeze(dim='band')
+logger.info(f'Map of upstream area corretly read: {cfg.UPSTREAM_FINE}')
 
 # read local drainage direction map
-ldd_fine = rioxarray.open_rasterio(LDD_FINE_FILE).squeeze(dim='band')
-logger.info(f'Map of local drainage directions corretly read: {LDD_FINE_FILE}')
+ldd_fine = rioxarray.open_rasterio(cfg.LDD_FINE).squeeze(dim='band')
+logger.info(f'Map of local drainage directions corretly read: {cfg.LDD_FINE}')
 
 # resolution of the input map
 cellsize = np.mean(np.diff(upstream_fine.x)) # degrees
@@ -43,8 +38,8 @@ suffix_fine = f'{cellsize_arcsec}sec'
 logger.info(f'The resolution of the finer grid is {cellsize_arcsec} arcseconds')
 
 # read stations text file
-stations = pd.read_csv(STATION_FILE, index_col='ID')
-logger.info(f'Table of stations correctly read: {STATION_FILE}')
+stations = pd.read_csv(cfg.STATIONS, index_col='ID')
+logger.info(f'Table of stations correctly read: {cfg.STATIONS}')
 
 
 # PROCESSING
@@ -61,7 +56,7 @@ fdir_fine = pyflwdir.from_array(ldd_fine.data,
                                 latlon=True)
 
 # output path
-SHAPE_FOLDER_FINE = SHAPE_FOLDER / suffix_fine
+SHAPE_FOLDER_FINE = cfg.SHAPE_FOLDER / suffix_fine
 SHAPE_FOLDER_FINE.mkdir(parents=True, exist_ok=True)
 
 for ID, attrs in tqdm(stations.iterrows(), total=stations.shape[0], desc='stations'):  
@@ -69,22 +64,16 @@ for ID, attrs in tqdm(stations.iterrows(), total=stations.shape[0], desc='statio
     # reference coordinates and upstream area
     lat_ref, lon_ref, area_ref = attrs[['lat', 'lon', 'area']]
 
-    # search range in cells: 55 = around 5km
-    rangexy = 55
-    logger.debug(f'Set range to {rangexy}')
-    lat, lon, error = find_pixel(upstream_fine, lat_ref, lon_ref, area_ref, rangexy=rangexy, penalty=500, factor=2)
-    
-    # if still big error, increase range
-    if error > 50:
-        rangexy = 101
-        logger.debug(f'Increase range to {rangexy}')
-        lat, lon, error = find_pixel(upstream_fine, lat_ref, lon_ref, area_ref, rangexy=rangexy, penalty=500, factor=0.5)
-
-        # if still big error increase range
-        if error > 80:
-            rangexy = 151
-            logger.debug(f'Increase range to {rangexy}')
-            lat, lon, error = find_pixel(upstream_fine, lat_ref, lon_ref, area_ref, rangexy=rangexy, penalty=1000, factor=0.25)
+    # search new coordinates in an increasing range
+    ranges = [55, 101, 151]
+    penalties = [500, 500, 1000]
+    factors = [2, .5, .25]
+    acceptable_errors = [50, 80, np.nan]
+    for rangexy, penalty, factor, max_error in zip(ranges, penalties, factors, acceptable_errors):
+        logger.debug(f'Set range to {rangexy}')
+        lat, lon, error = find_pixel(upstream_fine, lat_ref, lon_ref, area_ref, rangexy=rangexy, penalty=penalty, factor=factor)
+        if error <= max_error:
+            break
 
     # update new columns in 'stations'
     stations.loc[ID, new_cols] = [round(lat, 6), round(lon, 6), int(upstream_fine.sel(y=lat, x=lon).item())]
@@ -108,6 +97,6 @@ for ID, attrs in tqdm(stations.iterrows(), total=stations.shape[0], desc='statio
 
 # export results
 stations.sort_index(axis=1, inplace=True)
-output_csv = f'{STATION_FILE.stem}_{suffix_fine}.csv'
+output_csv = f'{cfg.STATIONS.stem}_{suffix_fine}.csv'
 stations.to_csv(output_csv)
 logger.info(f'Coordinates an upstream area in the finer grid have been exported to: {output_csv}')
