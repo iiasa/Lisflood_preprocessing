@@ -7,7 +7,7 @@ setup(
     package_dir={'': 'src'},
     entry_points={
         'console_scripts': [
-            'correct-coordinates=lisfloodpreprocessing.correct_coordinates:main',
+            'lfcoordinates=lisfloodpreprocessing.correct_coordinates:main',
         ],
     },
     install_requires=[
@@ -21,7 +21,7 @@ setup(
         'xarray',
     ],
     author='Peter Burek, Jesús Casado Rodríguez',
-    author_email='jesus.casado-rodriguez@ec.europa.eu',
+    author_email='burek@iiasa.ac.at, jesus.casado-rodriguez@ec.europa.eu',
     description='Package to preprocess inputs of the hydrological model LISFLOOD.',
     keywords='hydrology lisflood stations',
 )

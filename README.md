@@ -18,20 +18,20 @@ Install the package with PiP:
 
 ## Tools
 
-### [`correct_coordinates`](./src/lisfloodpreprocessing/correct_coordinates.py)
+### [`lfcoordinates`](./src/lisfloodpreprocessing/correct_coordinates.py)
 
-This tool finds the appropriate coordinates in the LISFLOOD river network of any point, provided that it is on a river and the catchment area is known. A thourough explanation of the method can be found in [Burek and Smilovic (2023)](https://essd.copernicus.org/articles/15/5617/2023/).
+This tool finds the appropriate coordinates in the LISFLOOD river network of any point, provided that the catchment area is known. A thourough explanation of the method can be found in [Burek and Smilovic (2023)](https://essd.copernicus.org/articles/15/5617/2023/).
 
-First, it uses the original coordinates and catchment area to find the most accurate pixel in a high-resolution map. [Burek and Smilovic (2023)](https://essd.copernicus.org/articles/15/5617/2023/) use MERIT [(Yamazaki et al., 2019)](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2019WR024873), which has a spatial resolution of 3 arcseconds. The result of this first step is, for every point, a new value of coordinates and area, and a shapefile of the catchment polygon in high-resolution.
+First, it uses the original coordinates and catchment area to find the most accurate pixel in a high-resolution map. [Burek and Smilovic (2023)](https://essd.copernicus.org/articles/15/5617/2023/) use MERIT [(Yamazaki et al., 2019)](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2019WR024873), which has a spatial resolution of 3 arc-seconds. The result of this first step is, for every point, a new value of coordinates and area, and a shapefile of the catchment polygon in high-resolution.
 
-Second, it finds the pixel in the low-resolution grid (LISFLOOD static maps)that better matches the catchment shape derived in the previous step. As a result, for each point we obtained a new value of coordinates an area, and a new shapefile of the catchment polygon in low-resolution.
+Second, it finds the pixel in the low-resolution grid (LISFLOOD static maps) that better matches the catchment shape derived in the previous step. As a result, for each point we obtained a new value of coordinates an area, and a new shapefile of the catchment polygon in low-resolution.
 
 #### Usage
 
 Once the package is installed, the tool can be executed from the command prompt by indicating a configuration file:
 
 ```bash
-correct-coordinates --config-file config.yml
+lfcoordinates --config-file config.yml
 ```
 
 ##### Configuration file
