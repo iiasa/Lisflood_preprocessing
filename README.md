@@ -58,13 +58,13 @@ conditions:
 
 The tool requires 5 inputs:
 
-* A CSV file of the stations to be located in the LISFLOOD grid. This file must contain four columns with four specific names: 'ID', 'lat', 'lon', 'area' in km2. Below you find an example of the stations CSV file:
+* A CSV file of the stations to be located in the LISFLOOD grid. This file must contain four columns with four specific names: 'ID', 'area' in km2, 'lat', 'lon'. Below you find an example of the stations CSV file:
 
 ```csv
-ID,lat,lon,area
-429,49.018,12.144,35399
-436,48.947,12.015,26448
-439,48.88,12.747,37687
+ID,area,lat,lon
+429,35399,49.018,12.144
+436,26448,48.947,12.015
+439,37687,48.88,12.747
 ```
 
 * A map of the local drainage directions in high-resolution, e.g., MERIT.
@@ -79,10 +79,10 @@ All maps can be provided either in TIFF or NetCDF format.
 The main output is a new **CSV file** saved in the same directory where the input CSV file, and named similarly, but with a suffix indicating the resolution of the LISFLOOD grid. For instance, in the configuration file above the input CSV file is named _stations.csv_ and the resolution of the LISFLOOD grid is 3arcmin, so the output CSV files will be named _stations_3min.csv_. The CSV contains 6 new columns defining the coordinates and catchment area in both the high-resolution (`3sec` in the example) and low-resolution grids (`3min` in the example). Example:
 
 ```csv
-ID,lat,lon,area,lat_3sec,lon_3sec,area_3sec,lat_3min,lon_3min,area_3min
-429,49.018,12.144,35399,,,,,,
-436,48.947,12.015,26448,,,,,,
-439,48.88,12.747,37687,,,,,,
+ID,area,area_3min,area_3sec,lat,lat_3min,lat_3sec,lon,lon_3min,lon_3sec
+429,35399,35216,35344,49.018,49.025,49.022083,12.144,12.125,12.14375
+436,26448,26334,26394,48.947,48.925,48.94625,12.015,12.025,12.014583
+439,37687,37540,37605,48.88,48.925,48.879583,12.747,12.675,12.74625
 ```
 
 Besides, the tool creates **shapefiles** of the catchment polygons derived for both the high and low resolution grids. The shapefiles are saved in two subdirectories inside the `output_folder` directory defined in the configuration file. In each of these subdirectories, there will be one file for each station.
