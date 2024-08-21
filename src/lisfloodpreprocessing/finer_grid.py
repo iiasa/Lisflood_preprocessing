@@ -59,7 +59,7 @@ def coordinates_fine(
     # read stations text file
     stations = pd.read_csv(cfg.STATIONS, index_col='ID')
     logger.info(f'Table of stations correctly read: {cfg.STATIONS}')
-
+    
 
     # PROCESSING
     

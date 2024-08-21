@@ -64,21 +64,22 @@ def find_pixel(
     delta = rangexy * cellsize + 1e-6
     upstream_sel = upstream.sel(y=slice(lat_orig + delta, lat_orig - delta),
                                 x=slice(lon_orig - delta, lon_orig + delta))
-
-    # percent error in catchment area
-    error = 100 * (1 - upstream_sel / area)
-
+    
     # distance from the original pixel (in pixels)
     i = np.arange(-rangexy, rangexy + 1)
     ii, jj = np.meshgrid(i, i)
     distance = xr.DataArray(data=np.sqrt(ii**2 + jj**2) * distance_scaler, coords=upstream_sel.coords, dims=upstream_sel.dims)
+
+    # percent error in catchment area
+    error = 100 * abs(area - upstream_sel) / area
+
     # penalise if error is too big
     distance = distance.where(error <= error_threshold, distance + penalty)
 
-    # update error based on distance
+    # update error based on distance (every pixel deviation is a 'factor' increase in the error)
     error += factor * distance
 
-    # coordinates of the new location
+    # the new location is that with the smallest error
     min_error = error.where(error == error.min(), drop=True)
     lat_new, lon_new = [min_error[coord].item() for coord in ['y', 'x']]
     
