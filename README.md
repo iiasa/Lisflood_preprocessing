@@ -68,9 +68,9 @@ ID,area,lat,lon
 ```
 
 * A map of the local drainage directions in high-resolution, e.g., MERIT.
-* A map of the upstream area in high-resolution, e.g., MERIT. 
+* A map of the upstream area in high-resolution, e.g., MERIT. The units of this map must be km2, same units as the _area_ field in the CSV file.
 * A map of the local drainage directions in low-resolution, i.e., the LISFLOOD static map.
-* A map of the upstream area in high-resolution, i.e., the LISFLOOD static map. 
+* A map of the upstream area in low-resolution, i.e., the LISFLOOD static map. The units of this map are m2 (instead of km2), as these are the units used in LISFLOOD; the code converts internally this map into km2.
 
 All maps can be provided either in TIFF or NetCDF format.
 
