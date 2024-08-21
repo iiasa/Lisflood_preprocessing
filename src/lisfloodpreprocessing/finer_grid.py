@@ -70,7 +70,7 @@ def coordinates_fine(
     logger.info(f'The resolution of the finer grid is {cellsize_arcsec} arcseconds')
     
     # add columns to the table of stations
-    new_cols = [f'{col}_{suffix_fine}' for col in stations.columns]
+    new_cols = sorted([f'{col}_{suffix_fine}' for col in stations.columns])
     stations[new_cols] = np.nan
 
     # create river network
@@ -101,7 +101,7 @@ def coordinates_fine(
                 break
 
         # update new columns in 'stations'
-        stations.loc[ID, new_cols] = [round(lat, 6), round(lon, 6), int(upstream_fine.sel(y=lat, x=lon).item())]
+        stations.loc[ID, new_cols] = [int(upstream_fine.sel(y=lat, x=lon).item()), round(lat, 6), round(lon, 6)]
 
         # boolean map of the catchment associated to the corrected coordinates
         basin_arr = fdir_fine.basins(xy=(lon, lat)).astype(np.int32)
@@ -123,7 +123,7 @@ def coordinates_fine(
     # return/save
     stations.sort_index(axis=1, inplace=True)
     if save:
-        output_csv = f'{cfg.STATIONS.stem}_{suffix_fine}.csv'
+        output_csv = cfg.STATIONS.parent / f'{cfg.STATIONS.stem}_{suffix_fine}.csv'
         stations.to_csv(output_csv)
         logger.info(f'The updated stations table in the finer grid has been exported to: {output_csv}')
     else: 

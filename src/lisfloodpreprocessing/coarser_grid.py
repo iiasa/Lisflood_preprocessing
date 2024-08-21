@@ -77,10 +77,10 @@ def coordinates_coarse(
 
     # extract resolution of the finer grid from 'stations'
     suffix_fine = sorted(set([col.split('_')[1] for col in stations.columns if '_' in col]))[0]
-    cols_fine = [f'{col}_{suffix_fine}' for col in ['lat', 'lon', 'area']]
+    cols_fine = [f'{col}_{suffix_fine}' for col in ['area', 'lat', 'lon']]
 
     # add new columns to 'stations'
-    cols_coarse = [f'{col}_{suffix_coarse}' for col in ['lat', 'lon', 'area']]
+    cols_coarse = [f'{col}_{suffix_coarse}' for col in ['area', 'lat', 'lon']]
     stations[cols_coarse] = np.nan
 
     # output folders
@@ -175,8 +175,8 @@ def coordinates_coarse(
                                          name='ID')
         basin_coarse['ID'] = ID
         basin_coarse.set_index('ID', inplace=True)
-        basin_coarse[cols_fine] = lat_fine, lon_fine, area_fine
-        basin_coarse[cols_coarse] = lat_coarse, lon_coarse, area_coarse
+        basin_coarse[cols_fine] = area_fine, lat_fine, lon_fine
+        basin_coarse[cols_coarse] = area_coarse, lat_coarse, lon_coarse
 
         # export shapefile
         output_shp = SHAPE_FOLDER_COARSE / f'{ID}.shp'
@@ -184,12 +184,12 @@ def coordinates_coarse(
         logger.info(f'Catchment {ID} exported as shapefile: {output_shp}')
 
         # update new columns in 'stations'
-        stations.loc[ID, cols_coarse] = [round(lat_coarse, 6), round(lon_coarse, 6), int(area_coarse)]
+        stations.loc[ID, cols_coarse] = [int(area_coarse), round(lat_coarse, 6), round(lon_coarse, 6)]
     
     # return/save
     stations.sort_index(axis=1, inplace=True)
     if save:
-        output_csv = f'{Path(cfg.STATIONS).stem}_{suffix_coarse}.csv'
+        output_csv = cfg.STATIONS.parent / f'{cfg.STATIONS.stem}_{suffix_coarse}.csv'
         stations.to_csv(output_csv)
         logger.info(f'The updated stations table in the coarser grid has been exported to: {output_csv}')
     else:
