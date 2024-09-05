@@ -6,14 +6,14 @@ import geopandas as gpd
 import rioxarray
 import pyflwdir
 from pathlib import Path
-from tqdm.auto import tqdm
+from tqdm import tqdm
 from typing import Optional
 import logging
 import warnings
 warnings.filterwarnings("ignore")
 
 from lisfloodpreprocessing import Config
-from lisfloodpreprocessing.utils import catchment_polygon
+from lisfloodpreprocessing.utils import catchment_polygon, downstream_pixel
 
 # set logger
 logging.basicConfig(level=logging.INFO,
@@ -22,7 +22,8 @@ logger = logging.getLogger(__name__)
 
 def coordinates_coarse(
     cfg: Config,
-    stations: pd.DataFrame,
+    points: pd.DataFrame,
+    reservoirs: bool = False,
     save: bool = True
 ) -> Optional[pd.DataFrame]:
     """
@@ -34,15 +35,17 @@ def coordinates_coarse(
     -----------
     cfg: Config
         Configuration object containing file paths and parameters specified in the configuration file.
-    stations: pandas.DataFrame
+    points: pandas.DataFrame
         DataFrame containing station coordinates and upstream areas in the finer grid. It's the result of coarse_grid.coarse_grid()
+    reservoirs: bool
+        Whether the points are reservoirs or not. If True, the resulting coordinates refer to one pixel downstream of the actual solution, a deviation required by the LISFLOOD reservoir simulation
     save: bool
-        If True, the updated stations table is saved to a CSV file.
-        If False, the updated stations DataFrame is returned without saving.
+        If True, the updated points table is saved to a CSV file.
+        If False, the updated points DataFrame is returned without saving.
 
     Returns:
     --------
-    staions: pandas.DataFrame
+    points: pandas.DataFrame
         If save is False, returns a pandas DataFrame with updated station coordinates and upstream areas in the coarser grid. Otherwise, the function returns None, and the results are saved directly to a CSV file.
     """
 
@@ -75,13 +78,13 @@ def coordinates_coarse(
     suffix_coarse = f'{cellsize_arcmin}min'
     logger.info(f'Coarse resolution is {cellsize_arcmin} arcminutes')
 
-    # extract resolution of the finer grid from 'stations'
-    suffix_fine = sorted(set([col.split('_')[1] for col in stations.columns if '_' in col]))[0]
+    # extract resolution of the finer grid from 'points'
+    suffix_fine = sorted(set([col.split('_')[1] for col in points.columns if '_' in col]))[0]
     cols_fine = [f'{col}_{suffix_fine}' for col in ['area', 'lat', 'lon']]
 
-    # add new columns to 'stations'
+    # add new columns to 'points'
     cols_coarse = [f'{col}_{suffix_coarse}' for col in ['area', 'lat', 'lon']]
-    stations[cols_coarse] = np.nan
+    points[cols_coarse] = np.nan
 
     # output folders
     SHAPE_FOLDER_FINE = cfg.SHAPE_FOLDER / suffix_fine
@@ -90,7 +93,7 @@ def coordinates_coarse(
 
     # search range of 5x5 array -> this is where the best point can be found in the coarse grid
     rangexy = np.linspace(-2, 2, 5) * cellsize # arcmin
-    for ID, attrs in tqdm(stations.iterrows(), total=stations.shape[0], desc='stations'):
+    for ID, attrs in tqdm(points.iterrows(), total=points.shape[0], desc='points'):
 
         # real upstream area
         area_ref = attrs['area']
@@ -183,14 +186,18 @@ def coordinates_coarse(
         basin_coarse.to_file(output_shp)
         logger.info(f'Catchment {ID} exported as shapefile: {output_shp}')
 
-        # update new columns in 'stations'
-        stations.loc[ID, cols_coarse] = [int(area_coarse), round(lat_coarse, 6), round(lon_coarse, 6)]
+        # move the result one pixel downstream, in case of reservoir
+        if reservoirs:
+            lat_coarse, lon_coarse = downstream_pixel(lat_coarse, lon_coarse, upstream_coarse)
+            
+        # update new columns in 'points'
+        points.loc[ID, cols_coarse] = [int(area_coarse), round(lat_coarse, 6), round(lon_coarse, 6)]
     
     # return/save
-    stations.sort_index(axis=1, inplace=True)
+    points.sort_index(axis=1, inplace=True)
     if save:
-        output_csv = cfg.STATIONS.parent / f'{cfg.STATIONS.stem}_{suffix_coarse}.csv'
-        stations.to_csv(output_csv)
-        logger.info(f'The updated stations table in the coarser grid has been exported to: {output_csv}')
+        output_csv = cfg.POINTS.parent / f'{cfg.POINTS.stem}_{suffix_coarse}.csv'
+        points.to_csv(output_csv)
+        logger.info(f'The updated points table in the coarser grid has been exported to: {output_csv}')
     else:
-        return stations
+        return points

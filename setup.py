@@ -2,12 +2,12 @@ from setuptools import setup, find_packages
 
 setup(
     name='lisflood-preprocessing',
-    version='0.1.0',
+    version='0.2.0',
     packages=find_packages(where='src'),
     package_dir={'': 'src'},
     entry_points={
         'console_scripts': [
-            'lfcoordinates=lisfloodpreprocessing.correct_coordinates:main',
+            'lfcoords=lisfloodpreprocessing.lfcoords:main',
         ],
     },
     install_requires=[

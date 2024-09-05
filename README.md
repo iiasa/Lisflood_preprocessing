@@ -18,7 +18,7 @@ Install the package with PiP:
 
 ## Tools
 
-### [`lfcoordinates`](./src/lisfloodpreprocessing/correct_coordinates.py)
+### [`lfcoords`](./src/lisfloodpreprocessing/lfcoords.py)
 
 This tool finds the appropriate coordinates in the LISFLOOD river network of any point, provided that the catchment area is known. A thourough explanation of the method can be found in [Burek and Smilovic (2023)](https://essd.copernicus.org/articles/15/5617/2023/).
 
@@ -26,12 +26,20 @@ First, it uses the original coordinates and catchment area to find the most accu
 
 Second, it finds the pixel in the low-resolution grid (LISFLOOD static maps) that better matches the catchment shape derived in the previous step. As a result, for each point we obtained a new value of coordinates and area, and a new shapefile of the catchment polygon in low-resolution.
 
+Reservoirs in LISFLOOD need to be located one pixel downstream of their actual location. This is because LISFLOOD reads the reservoir inflow from one pixel upstream of the location defined in the reservoir static map, and releases the outflow at the reservoir pixel. The tool includes a flag (`-r`) to specify that the input points are reservoirs; if that is flagged, the coordinates in the CSV output file are corrected to refer to one pixel downstream, i.e., they can be directly used in LISFLOOD.
+
 #### Usage
 
 Once the package is installed, the tool can be executed from the command prompt by indicating a configuration file:
 
 ```bash
-lfcoordinates --config-file config.yml
+lfcoords --config-file config.yml
+```
+
+If the input points are reservoirs, you can use the flag `-r` to get the coordinates one pixel downstream of the original result:
+
+```bash
+lfcoords --config-file config.yml -r
 ```
 
 ##### Configuration file
