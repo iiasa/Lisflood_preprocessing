@@ -48,7 +48,7 @@ The configuration file defines the input files, the folder where the resulting s
 
 ```yml
 input:
-    stations: stations.csv # ID, lat, lon, area
+    points: stations.csv # ID, lat, lon, area
     ldd_fine: ../data/danube_fd.tif
     upstream_fine: ../data/ups_danube_3sec.tif # km2
     ldd_coarse: ldd_3min.tif
