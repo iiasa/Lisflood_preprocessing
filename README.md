@@ -1,3 +1,7 @@
+<img src="./images/copernicus_logo.png" alt="Logo Copernicus" width="280" align="center"><img src="./images/copernicus_emergency_management.png" alt="Logo CEMS" width="200" align="center">
+
+![Python_3.11](https://img.shields.io/badge/Python-%3E%3D3.11-blue?labelColor=343b41) &nbsp; [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+
 # Lisflood preprocessing
 
 This repository contains tools useful for pre-processing the inputs of the hydrological model [LISFLOOD-OS](https://ec-jrc.github.io/lisflood/). It is part of the outcomes of the European project SEED-FD (Project - HORIZON-CL4-2023-SPACE-01).
@@ -26,20 +30,12 @@ First, it uses the original coordinates and catchment area to find the most accu
 
 Second, it finds the pixel in the low-resolution grid (LISFLOOD static maps) that better matches the catchment shape derived in the previous step. As a result, for each point we obtained a new value of coordinates and area, and a new shapefile of the catchment polygon in low-resolution.
 
-Reservoirs in LISFLOOD need to be located one pixel downstream of their actual location. This is because LISFLOOD reads the reservoir inflow from one pixel upstream of the location defined in the reservoir static map, and releases the outflow at the reservoir pixel. The tool includes a flag (`-r`) to specify that the input points are reservoirs; if that is flagged, the coordinates in the CSV output file are corrected to refer to one pixel downstream, i.e., they can be directly used in LISFLOOD.
-
 #### Usage
 
 Once the package is installed, the tool can be executed from the command prompt by indicating a configuration file:
 
 ```bash
 lfcoords --config-file config.yml
-```
-
-If the input points are reservoirs, you can use the flag `-r` to get the coordinates one pixel downstream of the original result:
-
-```bash
-lfcoords --config-file config.yml -r
 ```
 
 ##### Configuration file
@@ -84,7 +80,18 @@ All maps can be provided either in TIFF or NetCDF format.
 
 ##### Outputs
 
-The main output is a new **CSV file** saved in the same directory as the input CSV file and named similarly, but with a suffix indicating the resolution of the LISFLOOD grid. For instance, in the configuration file above the input CSV file is named _stations.csv_ and the resolution of the LISFLOOD grid is 3 arcmin, so the output CSV file will be named _stations_3min.csv_. The CSV contains 6 new columns defining the coordinates and catchment area in both the high-resolution (`3sec` in the example) and low-resolution grids (`3min` in the example). Example:
+The tool saves the outputs in the folder specified in the configuration file (`output_folder`). Within this folder, the tool will create a series of shapefiles:
+
+* Intermediate results:
+    * A point shapefile with the original location of the input points. In the example, it will be named *stations.shp*.
+    * A point shapefile with the updated location of the input points in the finer grid. In the example, it will be named *stations_3sec.shp*.
+    * A polygon shapefile with the catchment polygons delineated for each of the input points in the finer grid. In the example, it will be named *catchments_3sec.shp*.
+    
+* Final results for the LISFLOOD grid:
+    * A point shapefile with the updated location of the input points in the LISFLOOD grid. In the example, it will be named *stations_3min.shp*.
+    * A polygon shapefile with the catchment polygons delineated for each of the input points in the LISFLOOD grid. In the example, it will be named *catchments_3min.shp*.
+
+The final SHP point layer contains 6 new columns defining the coordinates and catchment area in both the high-resolution (`3sec` in the example) and low-resolution grids (`3min` in the example). Example:
 
 ```csv
 ID,area,area_3min,area_3sec,lat,lat_3min,lat_3sec,lon,lon_3min,lon_3sec
@@ -93,4 +100,4 @@ ID,area,area_3min,area_3sec,lat,lat_3min,lat_3sec,lon,lon_3min,lon_3sec
 439,37687,37540,37605,48.88,48.925,48.879583,12.747,12.675,12.74625
 ```
 
-Besides, the tool creates **shapefiles** of the catchment polygons derived for both the high and low resolution grids. The shapefiles are saved in two subdirectories inside the `output_folder` directory defined in the configuration file. In each of these subdirectories, there will be one file for each station.
+The tool checks for conflicts in the relocation of the points both in the finer and coarser grids. If two or more points are in the same location, the tool will create another shapefile (*conflicts_3min.shp* in the example) with only the conflicting points, so that the user can fix the issue manually.

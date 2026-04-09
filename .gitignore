@@ -1,3 +1,7 @@
 **/.ipynb_checkpoints/
 **/__pycache__/
 **/*.egg-info/
+build/
+**/*.log
+calib_stations/MERIT/*.tif
+calib_stations/MERIT/*.zip

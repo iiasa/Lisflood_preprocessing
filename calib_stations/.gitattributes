@@ -1,0 +1,2 @@
+MERIT/dir_danube_3sec.zip filter=lfs diff=lfs merge=lfs -text
+MERIT/upa_danube_3sec.zip filter=lfs diff=lfs merge=lfs -text
